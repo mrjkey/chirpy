@@ -26,3 +26,11 @@ time = false
 
 for now i will just leave the defaults and see how it goes. what happens if I change the readme?
 nah, doesn't reload, good
+
+## using extension
+
+it is just called rest client
+
+if you can get postman to work, use that
+
+or curl
