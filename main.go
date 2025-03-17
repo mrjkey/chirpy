@@ -50,6 +50,7 @@ func main() {
 	mux.HandleFunc("POST /api/users", middlewareAddCfg(handleAddUser, &apicfg))
 
 	mux.HandleFunc("GET /api/chirps", middlewareAddCfg(handleGetChirps, &apicfg))
+	mux.HandleFunc("GET /api/chirps/{chirpID}", middlewareAddCfg(handlGetChirpById, &apicfg))
 	mux.HandleFunc("POST /api/chirps", middlewareAddCfg(handleAddChirp, &apicfg))
 
 	err = server.ListenAndServe()
@@ -197,63 +198,4 @@ func handleAddUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 func quickChirpError(w http.ResponseWriter, message string) {
 	data := makeChirpError(message)
 	makeJsonResponse(w, data, http.StatusInternalServerError)
-}
-
-type Chirp struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Body      string    `json:"body"`
-	UserID    uuid.UUID `json:"user_id"`
-}
-
-func handleAddChirp(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
-	decoder := json.NewDecoder(r.Body)
-	chirp := Chirp{}
-	err := decoder.Decode(&chirp)
-	if err != nil {
-		quickChirpError(w, err.Error())
-	}
-	body, err := validateChirp(chirp.Body)
-	if err != nil {
-		quickChirpError(w, err.Error())
-	}
-
-	args := database.AddChirpParams{
-		Body:   body,
-		UserID: chirp.UserID,
-	}
-
-	dbChirp, err := cfg.db.AddChirp(r.Context(), args)
-	if err != nil {
-		quickChirpError(w, err.Error())
-	}
-	data, err := json.Marshal(Chirp(dbChirp))
-	if err != nil {
-		quickChirpError(w, err.Error())
-	}
-	makeJsonResponse(w, data, http.StatusCreated)
-}
-
-func handleGetChirps(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
-	chirps, err := cfg.db.GetAllChirps(r.Context())
-	if err != nil {
-		quickChirpError(w, err.Error())
-	}
-
-	respChirps := []Chirp{}
-	for _, chirp := range chirps {
-		respChirps = append(respChirps, Chirp(chirp))
-	}
-
-	data, err := json.Marshal(respChirps)
-	if err != nil {
-		quickChirpError(w, err.Error())
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
-	w.Write(data)
-
 }
