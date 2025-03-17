@@ -1,31 +1,43 @@
-# GET http://localhost:8080/admin/metrics 
-# content-type: application/json
+# Get metrics
+GET http://localhost:8080/admin/metrics 
+content-type: application/json
 
-# {
-#     "name": "sample",
-#     "time": "Wed, 21 Oct 2015 18:27:50 GMT"
-# }
+{
+    "name": "sample",
+    "time": "Wed, 21 Oct 2015 18:27:50 GMT"
+}
 
-# GET http://localhost:8080/admin/reset 
+###
+# Reset everything
+POST http://localhost:8080/admin/reset 
 
+###
+# Add user to database
+POST http://localhost:8080/api/users
+content-type: application/json
 
+{
+  "email": "user@example.com"
+}
+
+###
+
+POST http://localhost:8080/api/validate_chirp
+content-type: application/json
+
+{
+    "body": "this is a short test"
+}
 ###############################################
-# POST http://localhost:8080/api/validate_chirp
-# content-type: application/json
+POST http://localhost:8080/api/validate_chirp
+content-type: application/json
 
-# {
-#     "body": "this is a short test"
-# }
+{
+    "body": "this is a short test this is a short testthis is a short test this is a short test this is a short test this is a short test this is a short test this is a short test this is a short test"
+}
 ###############################################
-# POST http://localhost:8080/api/validate_chirp
-# content-type: application/json
-
-# {
-#     "body": "this is a short test this is a short testthis is a short test this is a short test this is a short test this is a short test this is a short test this is a short test this is a short test"
-# }
-# ###############################################
-# POST http://localhost:8080/api/validate_chirp
-# content-type: application/json
+POST http://localhost:8080/api/validate_chirp
+content-type: application/json
 
 ###############################################
 POST http://localhost:8080/api/validate_chirp
@@ -34,3 +46,16 @@ content-type: application/json
 {
     "body": "this is a short test kerfuffle"
 }
+###############################################
+
+###
+
+POST http://localhost:8080/api/chirps
+content-type: application/json 
+
+{
+    "body": "This fire",
+    "user_id": "4b40e726-61b5-41c5-9aac-4067ae3d6577"
+}
+
+###

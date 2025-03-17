@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"net/http"
 	"sync/atomic"
-)
 
+	"github.com/mrjkey/chirpy/internal/database"
+)
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	db             *database.Queries
+	platform       string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -37,9 +40,15 @@ func (cfg *apiConfig) handleMetrics() func(w http.ResponseWriter, r *http.Reques
 	return function
 }
 
-func (cfg *apiConfig) handleMetricsReset() func(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handleReset() func(w http.ResponseWriter, r *http.Request) {
 	function := func(w http.ResponseWriter, r *http.Request) {
+		if cfg.platform != "dev" {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
 		cfg.fileserverHits.Store(0)
+		cfg.db.RemoveAllUsers(r.Context())
+		cfg.db.RemoveChirps(r.Context())
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Reset\n"))
