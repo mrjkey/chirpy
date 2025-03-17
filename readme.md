@@ -34,3 +34,35 @@ it is just called rest client
 if you can get postman to work, use that
 
 or curl
+
+## connection string
+
+```bash
+psql "postgres://postgres:a@localhost:5432/chirpy"
+```
+
+migrations
+
+```bash
+cd sql/schema
+goose postgres "postgres://postgres:a@localhost:5432/chirpy" up
+goose postgres "postgres://postgres:a@localhost:5432/chirpy" down
+```
+
+## .env file
+
+it is set to ignore (because you should it may have secrets)
+but the content is this:
+
+DB_URL="database_url" (the postgres url)
+
+## stuff to install
+
+go
+sqlc
+goose
+postgres
+gotdotenv
+air
+
+go get github.com/joho/godotenv

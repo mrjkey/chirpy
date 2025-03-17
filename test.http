@@ -23,6 +23,14 @@
 # {
 #     "body": "this is a short test this is a short testthis is a short test this is a short test this is a short test this is a short test this is a short test this is a short test this is a short test"
 # }
+# ###############################################
+# POST http://localhost:8080/api/validate_chirp
+# content-type: application/json
+
 ###############################################
 POST http://localhost:8080/api/validate_chirp
 content-type: application/json
+
+{
+    "body": "this is a short test kerfuffle"
+}
