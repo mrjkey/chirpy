@@ -48,6 +48,8 @@ func main() {
 	mux.HandleFunc("GET /admin/metrics", apicfg.handleMetrics())
 	mux.HandleFunc("POST /admin/reset", apicfg.handleReset())
 	mux.HandleFunc("POST /api/users", middlewareAddCfg(handleAddUser, &apicfg))
+
+	mux.HandleFunc("GET /api/chirps", middlewareAddCfg(handleGetChirps, &apicfg))
 	mux.HandleFunc("POST /api/chirps", middlewareAddCfg(handleAddChirp, &apicfg))
 
 	err = server.ListenAndServe()
@@ -231,4 +233,27 @@ func handleAddChirp(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 		quickChirpError(w, err.Error())
 	}
 	makeJsonResponse(w, data, http.StatusCreated)
+}
+
+func handleGetChirps(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
+	chirps, err := cfg.db.GetAllChirps(r.Context())
+	if err != nil {
+		quickChirpError(w, err.Error())
+	}
+
+	respChirps := []Chirp{}
+	for _, chirp := range chirps {
+		respChirps = append(respChirps, Chirp(chirp))
+	}
+
+	data, err := json.Marshal(respChirps)
+	if err != nil {
+		quickChirpError(w, err.Error())
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	w.Write(data)
+
 }
