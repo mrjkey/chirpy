@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/mrjkey/chirpy/internal/auth"
 	"github.com/mrjkey/chirpy/internal/database"
 )
 
@@ -47,7 +48,10 @@ func main() {
 	// mux.HandleFunc("POST /api/validate_chirp", handleValidateChirp)
 	mux.HandleFunc("GET /admin/metrics", apicfg.handleMetrics())
 	mux.HandleFunc("POST /admin/reset", apicfg.handleReset())
+
 	mux.HandleFunc("POST /api/users", middlewareAddCfg(handleAddUser, &apicfg))
+
+	mux.HandleFunc("POST /api/login", middlewareAddCfg(handleLogin, &apicfg))
 
 	mux.HandleFunc("GET /api/chirps", middlewareAddCfg(handleGetChirps, &apicfg))
 	mux.HandleFunc("GET /api/chirps/{chirpID}", middlewareAddCfg(handlGetChirpById, &apicfg))
@@ -163,21 +167,32 @@ type User struct {
 	Email     string    `json:"email"`
 }
 
-func handleAddUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
-	type NewUser struct {
-		Email string `json:"email"`
-	}
+type UserRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
 
-	newUser := NewUser{}
+func handleAddUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
+	userRequest := UserRequest{}
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&newUser)
+	err := decoder.Decode(&userRequest)
 	if err != nil {
 		// do something
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	hashedPassword, err := auth.HashPassword(userRequest.Password)
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
 
-	dbUser, err := cfg.db.CreateUser(r.Context(), newUser.Email)
+	args := database.CreateUserParams{
+		Email:          userRequest.Email,
+		HashedPassword: hashedPassword,
+	}
+
+	dbUser, err := cfg.db.CreateUser(r.Context(), args)
 	if err != nil {
 		fmt.Println(err)
 		data := makeChirpError("could not create user in database")
@@ -208,4 +223,34 @@ func convertUser(dbUser database.User) User {
 func quickChirpError(w http.ResponseWriter, message string) {
 	data := makeChirpError(message)
 	makeJsonResponse(w, data, http.StatusInternalServerError)
+}
+
+func handleLogin(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
+	userRequest := UserRequest{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&userRequest)
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+	user, err := cfg.db.GetUserByEmail(r.Context(), userRequest.Email)
+	if err != nil {
+		data := makeChirpError(err.Error())
+		makeJsonResponse(w, data, http.StatusUnauthorized)
+		return
+	}
+	err = auth.CheckPasswordHash(userRequest.Password, user.HashedPassword)
+	if err != nil {
+		data := makeChirpError(err.Error())
+		makeJsonResponse(w, data, http.StatusUnauthorized)
+		return
+	}
+	data, err := json.Marshal(convertUser(user))
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
