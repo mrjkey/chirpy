@@ -162,11 +162,12 @@ func middlewareAddCfg(
 }
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Token     string    `json:"token,omitempty"`
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	Token        string    `json:"token,omitempty"`
+	RefreshToken string    `json:"refresh_token,omitempty"`
 }
 
 type UserRequest struct {
@@ -263,6 +264,12 @@ func handleLogin(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 	}
 	convUser := convertUser(user)
 	convUser.Token = token
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+	convUser.RefreshToken = refreshToken
 
 	data, err := json.Marshal(convUser)
 	if err != nil {

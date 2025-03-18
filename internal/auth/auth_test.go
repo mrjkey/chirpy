@@ -69,3 +69,13 @@ func TestGetBearerToken(t *testing.T) {
 		t.Fatal("token does not match")
 	}
 }
+
+func TestMakeRefreshToken(t *testing.T) {
+	token, err := MakeRefreshToken()
+	if err != nil {
+		t.Fatal("it failed somehow")
+	}
+	if token == "" {
+		t.Fatalf("The token is empty: %v", token)
+	}
+}
