@@ -168,16 +168,16 @@ func handleAddUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 		Email string `json:"email"`
 	}
 
-	user := NewUser{}
+	newUser := NewUser{}
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&user)
+	err := decoder.Decode(&newUser)
 	if err != nil {
 		// do something
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	dbUser, err := cfg.db.CreateUser(r.Context(), user.Email)
+	dbUser, err := cfg.db.CreateUser(r.Context(), newUser.Email)
 	if err != nil {
 		fmt.Println(err)
 		data := makeChirpError("could not create user in database")
@@ -185,7 +185,7 @@ func handleAddUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 		return
 	}
 
-	data, err := json.Marshal(User(dbUser))
+	data, err := json.Marshal(convertUser(dbUser))
 	if err != nil {
 		data := makeChirpError("cannot marshel database user")
 		makeJsonResponse(w, data, http.StatusInternalServerError)
@@ -193,6 +193,16 @@ func handleAddUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 	}
 
 	makeJsonResponse(w, data, http.StatusCreated)
+}
+
+func convertUser(dbUser database.User) User {
+	user := User{
+		ID:        dbUser.ID,
+		CreatedAt: dbUser.CreatedAt,
+		UpdatedAt: dbUser.UpdatedAt,
+		Email:     dbUser.Email,
+	}
+	return user
 }
 
 func quickChirpError(w http.ResponseWriter, message string) {
