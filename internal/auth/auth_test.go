@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -51,5 +53,19 @@ func TestJWTs(t *testing.T) {
 	_, err = ValidateJWT(signedString, tokenSecret)
 	if err == nil {
 		t.Fatalf("token should have expired by now")
+	}
+}
+
+func TestGetBearerToken(t *testing.T) {
+	token := "MyToken"
+	tokenString := fmt.Sprintf("Bearer %v", token)
+	headers := http.Header{}
+	headers.Set("Authorization", tokenString)
+	returnedString, err := GetBearerToken(headers)
+	if err != nil {
+		t.Fatalf("error getting token: %v", err.Error())
+	}
+	if returnedString != token {
+		t.Fatal("token does not match")
 	}
 }

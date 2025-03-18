@@ -31,7 +31,6 @@ content-type: application/json
   "password": "test"
 }
 
-
 ###
 
 POST http://localhost:8080/api/validate_chirp
@@ -64,6 +63,7 @@ content-type: application/json
 
 POST http://localhost:8080/api/chirps
 content-type: application/json 
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiJhYzllMTRkMi1mZTBhLTQ3MzUtOTg3MC1lODc4M2UzY2NiZTAiLCJleHAiOjE3NDIyOTUwNjIsImlhdCI6MTc0MjI5MTQ2Mn0.fGfwg7seEh0EXLm1AgeEGflFQHRmpeeltTGVskYoob8
 
 {
     "body": "This fire",

@@ -24,6 +24,7 @@ func main() {
 	apicfg := apiConfig{}
 	apicfg.fileserverHits.Store(0)
 	apicfg.platform = os.Getenv("PLATFORM")
+	apicfg.tokenSecret = os.Getenv("TOKEN_SECRET")
 
 	dbURL := os.Getenv("DB_URL")
 	fmt.Println(dbURL)
@@ -165,11 +166,13 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Email     string    `json:"email"`
+	Token     string    `json:"token,omitempty"`
 }
 
 type UserRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email            string `json:"email"`
+	Password         string `json:"password"`
+	ExpiresInSeconds *int   `json:"expires_in_seconds"`
 }
 
 func handleAddUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
@@ -245,7 +248,23 @@ func handleLogin(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 		makeJsonResponse(w, data, http.StatusUnauthorized)
 		return
 	}
-	data, err := json.Marshal(convertUser(user))
+
+	var expiresIn int
+	if userRequest.ExpiresInSeconds == nil {
+		expiresIn = 60 * 60 // 1 hour
+	} else {
+		expiresIn = min(*userRequest.ExpiresInSeconds, 60*60)
+	}
+
+	token, err := auth.MakeJWT(user.ID, cfg.tokenSecret, time.Second*time.Duration(expiresIn))
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+	convUser := convertUser(user)
+	convUser.Token = token
+
+	data, err := json.Marshal(convUser)
 	if err != nil {
 		quickChirpError(w, err.Error())
 		return

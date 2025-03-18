@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/mrjkey/chirpy/internal/auth"
 	"github.com/mrjkey/chirpy/internal/database"
 )
 
@@ -17,14 +18,38 @@ type Chirp struct {
 	UserID    uuid.UUID `json:"user_id"`
 }
 
+func convertChirp(dbChirp database.Chirp) Chirp {
+	chirp := Chirp{
+		ID:        dbChirp.ID,
+		CreatedAt: dbChirp.CreatedAt,
+		UpdatedAt: dbChirp.UpdatedAt,
+		Body:      dbChirp.Body,
+		UserID:    dbChirp.UserID,
+	}
+	return chirp
+}
+
 func handleAddChirp(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
-	decoder := json.NewDecoder(r.Body)
-	chirp := Chirp{}
-	err := decoder.Decode(&chirp)
+	tokenString, err := auth.GetBearerToken(r.Header)
 	if err != nil {
 		quickChirpError(w, err.Error())
 		return
 	}
+	userID, err := auth.ValidateJWT(tokenString, cfg.tokenSecret)
+	if err != nil {
+		errData := makeChirpError(err.Error())
+		makeJsonResponse(w, errData, http.StatusUnauthorized)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	chirp := Chirp{}
+	err = decoder.Decode(&chirp)
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+
 	body, err := validateChirp(chirp.Body)
 	if err != nil {
 		quickChirpError(w, err.Error())
@@ -33,7 +58,7 @@ func handleAddChirp(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 
 	args := database.AddChirpParams{
 		Body:   body,
-		UserID: chirp.UserID,
+		UserID: userID,
 	}
 
 	dbChirp, err := cfg.db.AddChirp(r.Context(), args)
@@ -41,7 +66,7 @@ func handleAddChirp(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 		quickChirpError(w, err.Error())
 		return
 	}
-	data, err := json.Marshal(Chirp(dbChirp))
+	data, err := json.Marshal(convertChirp(dbChirp))
 	if err != nil {
 		quickChirpError(w, err.Error())
 		return
@@ -58,7 +83,7 @@ func handleGetChirps(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 
 	respChirps := []Chirp{}
 	for _, chirp := range chirps {
-		respChirps = append(respChirps, Chirp(chirp))
+		respChirps = append(respChirps, convertChirp(chirp))
 	}
 
 	data, err := json.Marshal(respChirps)

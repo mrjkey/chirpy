@@ -55,6 +55,8 @@ it is set to ignore (because you should it may have secrets)
 but the content is this:
 
 DB_URL="database_url" (the postgres url)
+PLATFORM="dev"
+SECRET_TOKEN="someshit"
 
 ## stuff to install
 
@@ -66,3 +68,9 @@ gotdotenv
 air
 
 go get github.com/joho/godotenv
+
+## making a secret
+
+```bash
+openssl rand -base64 64
+```
