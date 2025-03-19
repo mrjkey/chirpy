@@ -55,6 +55,9 @@ func main() {
 
 	mux.HandleFunc("POST /api/login", middlewareAddCfg(handleLogin, &apicfg))
 
+	mux.HandleFunc("POST /api/refresh", middlewareAddCfg(handleRefresh, &apicfg))
+	mux.HandleFunc("POST /api/revoke", middlewareAddCfg(handleRevoke, &apicfg))
+
 	mux.HandleFunc("GET /api/chirps", middlewareAddCfg(handleGetChirps, &apicfg))
 	mux.HandleFunc("GET /api/chirps/{chirpID}", middlewareAddCfg(handlGetChirpById, &apicfg))
 	mux.HandleFunc("POST /api/chirps", middlewareAddCfg(handleAddChirp, &apicfg))
@@ -296,4 +299,67 @@ func handleGetRefreshTokens(w http.ResponseWriter, r *http.Request, cfg *apiConf
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+}
+
+func handleRefresh(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
+	tokenString, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		data := makeChirpError(err.Error())
+		makeJsonResponse(w, data, http.StatusUnauthorized)
+		return
+	}
+
+	dbToken, err := cfg.db.GetRefeshToken(r.Context(), tokenString)
+	if err != nil {
+		data := makeChirpError(err.Error())
+		makeJsonResponse(w, data, http.StatusUnauthorized)
+		return
+	}
+
+	if dbToken.ExpiredAt.Before(time.Now()) {
+		data := makeChirpError("token is expired")
+		makeJsonResponse(w, data, http.StatusUnauthorized)
+		return
+	}
+
+	accessToken, err := auth.MakeJWT(dbToken.UserID, cfg.tokenSecret, time.Hour)
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+
+	type JsonToken struct {
+		Token string `json:"token"`
+	}
+
+	jsonToken := JsonToken{
+		Token: accessToken,
+	}
+
+	data, err := json.Marshal(jsonToken)
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
+func handleRevoke(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
+	tokenString, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		data := makeChirpError(err.Error())
+		makeJsonResponse(w, data, http.StatusUnauthorized)
+		return
+	}
+
+	err = cfg.db.RevokeRefreshToken(r.Context(), tokenString)
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

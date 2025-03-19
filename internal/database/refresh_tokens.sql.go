@@ -73,11 +73,41 @@ func (q *Queries) GetAllRefreshTokens(ctx context.Context) ([]RefreshToken, erro
 	return items, nil
 }
 
+const getRefeshToken = `-- name: GetRefeshToken :one
+select token, created_at, updated_at, user_id, expired_at, revoked_at from refresh_tokens
+where token = $1
+`
+
+func (q *Queries) GetRefeshToken(ctx context.Context, token string) (RefreshToken, error) {
+	row := q.db.QueryRowContext(ctx, getRefeshToken, token)
+	var i RefreshToken
+	err := row.Scan(
+		&i.Token,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.UserID,
+		&i.ExpiredAt,
+		&i.RevokedAt,
+	)
+	return i, err
+}
+
 const removeAllRefreshTokens = `-- name: RemoveAllRefreshTokens :exec
 delete from refresh_tokens
 `
 
 func (q *Queries) RemoveAllRefreshTokens(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, removeAllRefreshTokens)
+	return err
+}
+
+const revokeRefreshToken = `-- name: RevokeRefreshToken :exec
+update refresh_tokens
+set updated_at = now(), revoked_at = now()
+where token = $1
+`
+
+func (q *Queries) RevokeRefreshToken(ctx context.Context, token string) error {
+	_, err := q.db.ExecContext(ctx, revokeRefreshToken, token)
 	return err
 }

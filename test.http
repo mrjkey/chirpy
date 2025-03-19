@@ -80,5 +80,12 @@ GET http://localhost:8080/api/chirps/cd0c1d7b-aba5-42a1-9893-0b503cf2dbdc
 
 
 ###
-
 GET http://localhost:8080/admin/tokens
+
+###
+POST http://localhost:8080/api/refresh
+Authorization: Bearer f81ec7fd685f313d1ca03bae217ff4bcff4c86982a50ad05aec80b607d98f28d
+
+###
+POST http://localhost:8080/api/revoke
+Authorization: Bearer f81ec7fd685f313d1ca03bae217ff4bcff4c86982a50ad05aec80b607d98f28d
