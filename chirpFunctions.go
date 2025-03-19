@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -77,6 +78,7 @@ func handleAddChirp(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 
 func handleGetChirps(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 	authorIdString := r.URL.Query().Get("author_id")
+	sortString := r.URL.Query().Get("sort")
 	// fmt.Println(authorIdString)
 	var chirps []database.Chirp
 	var err error
@@ -98,6 +100,12 @@ func handleGetChirps(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 			quickChirpError(w, err.Error())
 			return
 		}
+	}
+
+	if sortString == "desc" {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].CreatedAt.After(chirps[j].CreatedAt)
+		})
 	}
 
 	respChirps := []Chirp{}
