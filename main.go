@@ -64,6 +64,8 @@ func main() {
 	mux.HandleFunc("POST /api/chirps", middlewareAddCfg(handleAddChirp, &apicfg))
 	mux.HandleFunc("DELETE /api/chirps/{chirpID}", middlewareAddCfg(handleDeleteChirp, &apicfg))
 
+	mux.HandleFunc("POST /api/polka/webhooks", middlewareAddCfg(handlePolkaWebhook, &apicfg))
+
 	err = server.ListenAndServe()
 	if err != nil {
 		fmt.Println("error starting server")
@@ -174,6 +176,7 @@ type User struct {
 	Email        string    `json:"email"`
 	Token        string    `json:"token,omitempty"`
 	RefreshToken string    `json:"refresh_token,omitempty"`
+	IsChirpyRed  bool      `json:"is_chirpy_red"`
 }
 
 type UserRequest struct {
@@ -221,10 +224,11 @@ func handleAddUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 
 func convertUser(dbUser database.User) User {
 	user := User{
-		ID:        dbUser.ID,
-		CreatedAt: dbUser.CreatedAt,
-		UpdatedAt: dbUser.UpdatedAt,
-		Email:     dbUser.Email,
+		ID:          dbUser.ID,
+		CreatedAt:   dbUser.CreatedAt,
+		UpdatedAt:   dbUser.UpdatedAt,
+		Email:       dbUser.Email,
+		IsChirpyRed: dbUser.IsChirpyRed,
 	}
 	return user
 }
@@ -420,4 +424,42 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+}
+
+func handlePolkaWebhook(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
+	type PolkaRequest struct {
+		Event string `json:"event:`
+		Data  struct {
+			UserID string `json:"user_id"`
+		} `json:"data"`
+	}
+	var polkaRequest PolkaRequest
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&polkaRequest)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if polkaRequest.Event != "user.upgraded" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	userID, err := uuid.Parse(polkaRequest.Data.UserID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	user, err := cfg.db.UpgradeUserToRed(r.Context(), userID)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if user.IsChirpyRed {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 }
