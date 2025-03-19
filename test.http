@@ -84,8 +84,8 @@ GET http://localhost:8080/admin/tokens
 
 ###
 POST http://localhost:8080/api/refresh
-Authorization: Bearer f81ec7fd685f313d1ca03bae217ff4bcff4c86982a50ad05aec80b607d98f28d
+Authorization: Bearer 004ad600982d4e486801270e58221213647770cdc4c9ff432c7599f2f763b047
 
 ###
 POST http://localhost:8080/api/revoke
-Authorization: Bearer f81ec7fd685f313d1ca03bae217ff4bcff4c86982a50ad05aec80b607d98f28d
+Authorization: Bearer 004ad600982d4e486801270e58221213647770cdc4c9ff432c7599f2f763b047

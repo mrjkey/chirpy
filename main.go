@@ -52,6 +52,7 @@ func main() {
 	mux.HandleFunc("GET /admin/tokens", middlewareAddCfg(handleGetRefreshTokens, &apicfg))
 
 	mux.HandleFunc("POST /api/users", middlewareAddCfg(handleAddUser, &apicfg))
+	mux.HandleFunc("PUT /api/users", middlewareAddCfg(handleUpdateUser, &apicfg))
 
 	mux.HandleFunc("POST /api/login", middlewareAddCfg(handleLogin, &apicfg))
 
@@ -368,4 +369,61 @@ func handleRevoke(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func handleUpdateUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
+	tokenString, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		data := makeChirpError(err.Error())
+		makeJsonResponse(w, data, http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(tokenString, cfg.tokenSecret)
+	if err != nil {
+		errData := makeChirpError(err.Error())
+		makeJsonResponse(w, errData, http.StatusUnauthorized)
+		return
+	}
+
+	type UpdateUser struct {
+		Password string `json:"password"`
+		Email    string `json:"email"`
+	}
+
+	var updateUser UpdateUser
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&updateUser)
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+
+	hashedPassword, err := auth.HashPassword(updateUser.Password)
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+
+	args := database.UpdateUserParams{
+		ID:             userID,
+		HashedPassword: hashedPassword,
+		Email:          updateUser.Email,
+	}
+
+	dbUser, err := cfg.db.UpdateUser(r.Context(), args)
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+
+	data, err := json.Marshal(convertUser(dbUser))
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }

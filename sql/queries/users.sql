@@ -10,3 +10,9 @@ delete from users;
 -- name: GetUserByEmail :one
 select * from users
 where email = $1;
+
+-- name: UpdateUser :one
+update users
+set hashed_password = $2, email = $3, updated_at = now()
+where id = $1
+returning *;
