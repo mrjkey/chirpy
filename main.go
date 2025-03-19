@@ -322,6 +322,12 @@ func handleRefresh(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 		return
 	}
 
+	if dbToken.RevokedAt.Valid {
+		data := makeChirpError("token has been revoked")
+		makeJsonResponse(w, data, http.StatusUnauthorized)
+		return
+	}
+
 	accessToken, err := auth.MakeJWT(dbToken.UserID, cfg.tokenSecret, time.Hour)
 	if err != nil {
 		quickChirpError(w, err.Error())
