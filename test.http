@@ -63,7 +63,7 @@ content-type: application/json
 
 POST http://localhost:8080/api/chirps
 content-type: application/json 
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiJhYzllMTRkMi1mZTBhLTQ3MzUtOTg3MC1lODc4M2UzY2NiZTAiLCJleHAiOjE3NDIyOTUwNjIsImlhdCI6MTc0MjI5MTQ2Mn0.fGfwg7seEh0EXLm1AgeEGflFQHRmpeeltTGVskYoob8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiJlNDY2ZDA5MC01ODcwLTRlM2ItODhhNC00YTk4ZjI5MDZlOGIiLCJleHAiOjE3NDIzNzI2NDksImlhdCI6MTc0MjM2OTA0OX0.UsDT9-4hVQSrRSQ1QVtr08pUfp0-RsBzf3OwpkHUyZ4
 
 {
     "body": "This fire",
@@ -89,3 +89,7 @@ Authorization: Bearer 004ad600982d4e486801270e58221213647770cdc4c9ff432c7599f2f7
 ###
 POST http://localhost:8080/api/revoke
 Authorization: Bearer 004ad600982d4e486801270e58221213647770cdc4c9ff432c7599f2f763b047
+
+###
+DELETE http://localhost:8080/api/chirps/e136bb4e-be7a-4f3f-9839-23aba3c0c913
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiJlNDY2ZDA5MC01ODcwLTRlM2ItODhhNC00YTk4ZjI5MDZlOGIiLCJleHAiOjE3NDIzNzI2NDksImlhdCI6MTc0MjM2OTA0OX0.UsDT9-4hVQSrRSQ1QVtr08pUfp0-RsBzf3OwpkHUyZ4

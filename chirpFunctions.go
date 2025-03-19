@@ -125,3 +125,41 @@ func handlGetChirpById(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
+
+func handleDeleteChirp(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
+	userID, err := auth.AuthorizeUser(r.Header, cfg.tokenSecret)
+	if err != nil {
+		errData := makeChirpError(err.Error())
+		makeJsonResponse(w, errData, http.StatusUnauthorized)
+		return
+	}
+
+	id := r.PathValue("chirpID")
+	parsedId, err := uuid.Parse(id)
+	if err != nil {
+		errData := makeChirpError(err.Error())
+		makeJsonResponse(w, errData, http.StatusNotFound)
+		return
+	}
+	chirp, err := cfg.db.GetChirpById(r.Context(), parsedId)
+	if err != nil {
+		errData := makeChirpError(err.Error())
+		makeJsonResponse(w, errData, http.StatusNotFound)
+		return
+	}
+
+	if chirp.UserID != userID {
+		errData := makeChirpError("user is not the author")
+		makeJsonResponse(w, errData, http.StatusForbidden)
+		return
+	}
+
+	err = cfg.db.DeleteChirp(r.Context(), chirp.ID)
+	if err != nil {
+		errData := makeChirpError(err.Error())
+		makeJsonResponse(w, errData, http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}

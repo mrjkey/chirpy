@@ -62,6 +62,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps", middlewareAddCfg(handleGetChirps, &apicfg))
 	mux.HandleFunc("GET /api/chirps/{chirpID}", middlewareAddCfg(handlGetChirpById, &apicfg))
 	mux.HandleFunc("POST /api/chirps", middlewareAddCfg(handleAddChirp, &apicfg))
+	mux.HandleFunc("DELETE /api/chirps/{chirpID}", middlewareAddCfg(handleDeleteChirp, &apicfg))
 
 	err = server.ListenAndServe()
 	if err != nil {
@@ -372,14 +373,7 @@ func handleRevoke(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 }
 
 func handleUpdateUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
-	tokenString, err := auth.GetBearerToken(r.Header)
-	if err != nil {
-		data := makeChirpError(err.Error())
-		makeJsonResponse(w, data, http.StatusUnauthorized)
-		return
-	}
-
-	userID, err := auth.ValidateJWT(tokenString, cfg.tokenSecret)
+	userID, err := auth.AuthorizeUser(r.Header, cfg.tokenSecret)
 	if err != nil {
 		errData := makeChirpError(err.Error())
 		makeJsonResponse(w, errData, http.StatusUnauthorized)

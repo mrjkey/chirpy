@@ -6,6 +6,10 @@ returning *;
 -- name: RemoveChirps :exec
 delete from chirps;
 
+-- name: DeleteChirp :exec
+delete from chirps
+where id = $1;
+
 -- name: GetAllChirps :many
 select * from chirps
 order by created_at asc;
