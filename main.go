@@ -49,6 +49,7 @@ func main() {
 	// mux.HandleFunc("POST /api/validate_chirp", handleValidateChirp)
 	mux.HandleFunc("GET /admin/metrics", apicfg.handleMetrics())
 	mux.HandleFunc("POST /admin/reset", apicfg.handleReset())
+	mux.HandleFunc("GET /admin/tokens", middlewareAddCfg(handleGetRefreshTokens, &apicfg))
 
 	mux.HandleFunc("POST /api/users", middlewareAddCfg(handleAddUser, &apicfg))
 
@@ -171,9 +172,8 @@ type User struct {
 }
 
 type UserRequest struct {
-	Email            string `json:"email"`
-	Password         string `json:"password"`
-	ExpiresInSeconds *int   `json:"expires_in_seconds"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func handleAddUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
@@ -250,14 +250,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 		return
 	}
 
-	var expiresIn int
-	if userRequest.ExpiresInSeconds == nil {
-		expiresIn = 60 * 60 // 1 hour
-	} else {
-		expiresIn = min(*userRequest.ExpiresInSeconds, 60*60)
-	}
-
-	token, err := auth.MakeJWT(user.ID, cfg.tokenSecret, time.Second*time.Duration(expiresIn))
+	token, err := auth.MakeJWT(user.ID, cfg.tokenSecret, time.Hour)
 	if err != nil {
 		quickChirpError(w, err.Error())
 		return
@@ -270,12 +263,36 @@ func handleLogin(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 		return
 	}
 	convUser.RefreshToken = refreshToken
+	args := database.CreateRefreshTokenParams{
+		Token:     refreshToken,
+		UserID:    user.ID,
+		ExpiredAt: time.Now().Add(time.Hour * 24 * 60), // 60 days
+	}
+	cfg.db.CreateRefreshToken(r.Context(), args)
 
 	data, err := json.Marshal(convUser)
 	if err != nil {
 		quickChirpError(w, err.Error())
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
+func handleGetRefreshTokens(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
+	tokens, err := cfg.db.GetAllRefreshTokens(r.Context())
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+
+	data, err := json.Marshal(tokens)
+	if err != nil {
+		quickChirpError(w, err.Error())
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)

@@ -8,7 +8,7 @@ create table refresh_tokens (
         foreign key (user_id)
         references public.users(id)
         on delete cascade,
-    expired_at timestamp,
+    expired_at timestamp not null,
     revoked_at timestamp
 );
 
