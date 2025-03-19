@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -75,10 +76,28 @@ func handleAddChirp(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 }
 
 func handleGetChirps(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
-	chirps, err := cfg.db.GetAllChirps(r.Context())
-	if err != nil {
-		quickChirpError(w, err.Error())
-		return
+	authorIdString := r.URL.Query().Get("author_id")
+	// fmt.Println(authorIdString)
+	var chirps []database.Chirp
+	var err error
+	if authorIdString != "" {
+		// fmt.Println("found author id")
+		authorId, err := uuid.Parse(authorIdString)
+		if err != nil {
+			quickChirpError(w, err.Error())
+			return
+		}
+		chirps, err = cfg.db.GetAllChirpsByAuthor(context.Background(), authorId)
+		if err != nil {
+			quickChirpError(w, err.Error())
+			return
+		}
+	} else {
+		chirps, err = cfg.db.GetAllChirps(r.Context())
+		if err != nil {
+			quickChirpError(w, err.Error())
+			return
+		}
 	}
 
 	respChirps := []Chirp{}

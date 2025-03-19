@@ -99,3 +99,24 @@ func AuthorizeUser(headers http.Header, tokenSecret string) (uuid.UUID, error) {
 
 	return userID, nil
 }
+
+func GetAPIKey(headers http.Header) (string, error) {
+	token := headers.Get("Authorization")
+	if token == "" {
+		return "", fmt.Errorf("token string not found in header")
+	}
+	stripped := strings.Replace(token, "ApiKey ", "", 1)
+	return stripped, nil
+}
+
+func AuthorizeApiKey(headers http.Header, key string) error {
+	apiKey, err := GetAPIKey(headers)
+	if err != nil {
+		return err
+	}
+
+	if apiKey != key {
+		return fmt.Errorf("api key does not match")
+	}
+	return nil
+}

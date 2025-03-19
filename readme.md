@@ -57,6 +57,7 @@ but the content is this:
 DB_URL="database_url" (the postgres url)
 PLATFORM="dev"
 SECRET_TOKEN="someshit"
+POLKA_KEY="somemoreshit"
 
 ## stuff to install
 

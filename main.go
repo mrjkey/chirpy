@@ -25,6 +25,7 @@ func main() {
 	apicfg.fileserverHits.Store(0)
 	apicfg.platform = os.Getenv("PLATFORM")
 	apicfg.tokenSecret = os.Getenv("TOKEN_SECRET")
+	apicfg.polkaKey = os.Getenv("POLKA_KEY")
 
 	dbURL := os.Getenv("DB_URL")
 	fmt.Println(dbURL)
@@ -33,6 +34,7 @@ func main() {
 		fmt.Println("unable to open db")
 		os.Exit(1)
 	}
+
 	apicfg.db = database.New(db)
 	// fmt.Println(dbQueries)
 
@@ -427,6 +429,13 @@ func handleUpdateUser(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
 }
 
 func handlePolkaWebhook(w http.ResponseWriter, r *http.Request, cfg *apiConfig) {
+	err := auth.AuthorizeApiKey(r.Header, cfg.polkaKey)
+	if err != nil {
+		errData := makeChirpError(err.Error())
+		makeJsonResponse(w, errData, http.StatusUnauthorized)
+		return
+	}
+
 	type PolkaRequest struct {
 		Event string `json:"event:`
 		Data  struct {
@@ -435,7 +444,7 @@ func handlePolkaWebhook(w http.ResponseWriter, r *http.Request, cfg *apiConfig) 
 	}
 	var polkaRequest PolkaRequest
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&polkaRequest)
+	err = decoder.Decode(&polkaRequest)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

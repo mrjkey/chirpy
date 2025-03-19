@@ -93,3 +93,6 @@ Authorization: Bearer 004ad600982d4e486801270e58221213647770cdc4c9ff432c7599f2f7
 ###
 DELETE http://localhost:8080/api/chirps/e136bb4e-be7a-4f3f-9839-23aba3c0c913
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHkiLCJzdWIiOiJlNDY2ZDA5MC01ODcwLTRlM2ItODhhNC00YTk4ZjI5MDZlOGIiLCJleHAiOjE3NDIzNzI2NDksImlhdCI6MTc0MjM2OTA0OX0.UsDT9-4hVQSrRSQ1QVtr08pUfp0-RsBzf3OwpkHUyZ4
+
+###
+ GET http://localhost:8080/api/chirps?author_id=d03ae1ff-871a-46da-9cad-8e57501a130d
